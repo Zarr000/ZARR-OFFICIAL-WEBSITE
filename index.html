@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZARR Website</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: url('https://files.catbox.moe/verraj.jpg') no-repeat center center/cover;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .menu-toggle {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 30px;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .menu-box {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      background-color: rgba(20, 20, 20, 0.9);
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: 0 0 20px cyan;
+    }
+
+    .menu-box a {
+      color: white;
+      text-decoration: none;
+      font-size: 20px;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .menu-box a:hover {
+      color: cyan;
+      transform: scale(1.05);
+    }
+
+    h1 {
+      font-size: 40px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .btn {
+      margin-top: 30px;
+      padding: 12px 30px;
+      font-size: 20px;
+      color: white;
+      border: 2px solid cyan;
+      border-radius: 30px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background: cyan;
+      color: black;
+      box-shadow: 0 0 15px cyan;
+    }
+
+    .visible {
+      display: flex !important;
+    }
+    
+ 
+  .neon-button {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border: 2px solid #00ffff;
+    border-radius: 9999px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.125rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+  }
+
+  .neon-button:hover {
+    background-color: #00ffff;
+    color: #000;
+    box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+  }
+    
+  </style>
+</head>
+<body>
+  <div class="menu-toggle">&#9776;</div>
+
+  <div class="menu-box" id="menuBox">
+    <a href="menu.html">HOME</a>
+    <a href="index.html">MENU</a>
+    <a href="about.html">ABOUT</a>
+    <a href="contact.html">CONTACT</a>
+  </div>
+
+  <div class="content">
+    <h1>Welcome to<br>ZARR OFFC</h1>
+   <a href="menu.html" class="neon-button px-6 py-3 mt-6 text-lg font-semibold text-white border-2 border-cyan-400 rounded-full hover:bg-cyan-500 hover:text-black transition duration-300">Get Started</a>
+  </div>
+
+  <script>
+    const menuToggle = document.querySelector('.menu-toggle');
+    const menuBox = document.getElementById('menuBox');
+
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuBox.classList.toggle('visible');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menuBox.contains(e.target) && !menuToggle.contains(e.target)) {
+        menuBox.classList.remove('visible');
+      }
+    });
+  </script>
+</body>
+</html>
