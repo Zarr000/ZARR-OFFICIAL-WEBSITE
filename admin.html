@@ -107,6 +107,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const adminUID = "C4aQ04jGiKMEKGgx7LFeBCEqMKe2";
+    const adminUID = "iVE8LW71clOfPFo5Hf8k1dNpFlu2";   
 
     onAuthStateChanged(auth, async (user) => {
       if (!user || user.uid !== adminUID) {
