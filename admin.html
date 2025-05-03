@@ -1,129 +1,103 @@
-<!DOCTYPE html>
+          <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0d0d0d;
+      background: url('https://files.catbox.moe/zwwllz.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #00ffff;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .neon-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 12px;
       padding: 20px;
+      box-shadow: 0 0 20px #00ffff55;
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      text-shadow: 0 0 10px #00ffff;
+    .glow-btn {
+      background: #00ffff;
+      color: #000;
+      font-weight: bold;
+      transition: 0.3s;
     }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: space-between;
-      margin-bottom: 20px;
+    .glow-btn:hover {
+      background: #00f0f0;
+      box-shadow: 0 0 10px #00ffff99;
     }
     input, select {
-      padding: 8px;
-      border: none;
-      border-radius: 6px;
-      background-color: #111;
+      background-color: transparent;
+      border: 1px solid #00ffff;
       color: #00ffff;
-      box-shadow: 0 0 5px #00ffff44;
     }
     table {
       width: 100%;
-      border-collapse: collapse;
-      background-color: #111;
-      box-shadow: 0 0 10px #00ffff44;
-      border-radius: 12px;
-      overflow: hidden;
     }
     th, td {
-      padding: 12px 16px;
+      padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #222;
+      border-bottom: 1px solid #00ffff33;
     }
     th {
-      background-color: #0d0d0d;
       color: #00ffff;
     }
-    tr:hover {
-      background-color: #222;
-    }
-    button {
-      padding: 6px 12px;
-      background-color: #00ffff;
-      border: none;
-      border-radius: 6px;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-      margin-right: 4px;
-    }
-    button:hover {
-      background-color: #00cccc;
-    }
-    .status.active { color: lime; font-weight: bold; }
-    .status.disabled { color: red; font-weight: bold; }
-    .add-user-form {
-      background: #111;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px #00ffff22;
-      margin-top: 20px;
-    }
-    .add-user-form input {
-      margin: 5px 0;
-      width: 100%;
+    .bg-dark {
+      background-color: rgba(0,0,0,0.6);
     }
   </style>
 </head>
-<body>
-  <h1>Admin Panel</h1>
+<body class="p-4">
+  <h1 class="text-3xl text-center font-bold mb-6">Admin Panel</h1>
 
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="Cari username/email..." oninput="filterUsers()" />
-    <select id="statusFilter" onchange="filterUsers()">
+  <div class="flex justify-between mb-4">
+    <input id="searchInput" type="text" placeholder="Cari username/email..." class="px-4 py-2 rounded w-1/2">
+    <select id="filterStatus" class="px-4 py-2 rounded">
       <option value="all">Semua</option>
       <option value="active">Aktif</option>
       <option value="disabled">Nonaktif</option>
     </select>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>UID</th>
-        <th>Status</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="userTable"></tbody>
-  </table>
+  <div class="overflow-x-auto">
+    <table class="bg-dark neon-box">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>UID</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
 
-  <div class="add-user-form">
-    <h3>Tambah User Manual</h3>
-    <input type="text" id="manualUsername" placeholder="Username" />
-    <input type="email" id="manualEmail" placeholder="Email" />
-    <input type="password" id="manualPassword" placeholder="Password" />
-    <button onclick="addManualUser()">Tambah User</button>
+  <div class="neon-box mt-10">
+    <h2 class="text-xl font-bold mb-4">Tambah User Manual</h2>
+    <input id="manualUsername" type="text" placeholder="Username" class="block w-full mb-2 px-4 py-2 rounded">
+    <input id="manualEmail" type="email" placeholder="Email" class="block w-full mb-2 px-4 py-2 rounded">
+    <input id="manualPassword" type="password" placeholder="Password" class="block w-full mb-4 px-4 py-2 rounded">
+    <button id="addUserBtn" class="glow-btn px-4 py-2 rounded">Tambah User</button>
+  </div>
+
+  <div class="text-center mt-8">
+    <button id="deleteChatBtn" class="glow-btn px-6 py-2 rounded">Hapus Semua Chat</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBS8zFam4zEzbArxbLru-n7LkxGVqCYJ1g",
       authDomain: "zarr-official-website.firebaseapp.com",
       projectId: "zarr-official-website",
-      storageBucket: "zarr-official-website.firebasestorage.app",
+      storageBucket: "zarr-official-website.appspot.com",
       messagingSenderId: "140664672363",
       appId: "1:140664672363:web:140cd6a7f005e53b88612e",
       measurementId: "G-ETFQ9RLF17"
@@ -132,97 +106,95 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    const ADMIN_UID = "C4aQ04jGiKMEKGgx7LFeBCEqMKe2";
-    let allUsers = [];
+    const adminUID = "C4aQ04jGiKMEKGgx7LFeBCEqMKe2";
 
     onAuthStateChanged(auth, async (user) => {
-      if (!user || user.uid !== ADMIN_UID) {
-        alert("Akses ditolak. Anda bukan admin.");
+      if (!user || user.uid !== adminUID) {
+        alert("Akses hanya untuk admin.");
         window.location.href = "login.html";
         return;
       }
-      await loadUsers();
+      loadUsers();
     });
 
     async function loadUsers() {
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      allUsers = [];
-      usersSnapshot.forEach(docSnap => {
-        allUsers.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      renderTable(allUsers);
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById("userTable");
+      const snapshot = await getDocs(collection(db, "users"));
+      const tbody = document.getElementById("userTableBody");
       tbody.innerHTML = "";
-      data.forEach(user => {
-        const status = user.disabled ? "Nonaktif" : "Aktif";
-        const statusClass = user.disabled ? "disabled" : "active";
-        const toggleText = user.disabled ? "Aktifkan" : "Nonaktifkan";
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${user.username || "-"}</td>
-          <td>${user.email || "-"}</td>
-          <td>${user.id}</td>
-          <td class="status ${statusClass}">${status}</td>
-          <td>
-            <button onclick="toggleStatus('${user.id}', ${user.disabled})">${toggleText}</button>
-            <button onclick="deleteUser('${user.id}')">Hapus</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+        if (shouldShowUser(data)) {
+          tr.innerHTML = `
+            <td>${data.username}</td>
+            <td>${data.email}</td>
+            <td>${docSnap.id}</td>
+            <td class="font-bold ${data.disabled ? 'text-red-500' : 'text-green-400'}">${data.disabled ? "Nonaktif" : "Aktif"}</td>
+            <td>
+              <button class="glow-btn px-3 py-1 rounded mb-1" onclick="toggleStatus('${docSnap.id}', ${data.disabled})">
+                ${data.disabled ? "Aktifkan" : "Nonaktifkan"}
+              </button>
+              <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded" onclick="deleteUser('${docSnap.id}')">Hapus</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
       });
     }
 
-    window.toggleStatus = async (uid, isDisabled) => {
-      const userRef = doc(db, "users", uid);
-      await updateDoc(userRef, { disabled: !isDisabled });
-      await loadUsers();
+    function shouldShowUser(data) {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const status = document.getElementById("filterStatus").value;
+      const matchSearch = data.username.toLowerCase().includes(search) || data.email.toLowerCase().includes(search);
+      const matchStatus =
+        status === "all" ||
+        (status === "active" && !data.disabled) ||
+        (status === "disabled" && data.disabled);
+      return matchSearch && matchStatus;
+    }
+
+    document.getElementById("searchInput").addEventListener("input", loadUsers);
+    document.getElementById("filterStatus").addEventListener("change", loadUsers);
+
+    window.toggleStatus = async (uid, disabled) => {
+      await updateDoc(doc(db, "users", uid), { disabled: !disabled });
+      loadUsers();
     };
 
     window.deleteUser = async (uid) => {
       if (confirm("Yakin ingin menghapus user ini?")) {
         await deleteDoc(doc(db, "users", uid));
-        await loadUsers();
+        loadUsers();
       }
     };
 
-    window.filterUsers = () => {
-      const query = document.getElementById("searchInput").value.toLowerCase();
-      const filter = document.getElementById("statusFilter").value;
-      const filtered = allUsers.filter(u => {
-        const matchesQuery = u.username?.toLowerCase().includes(query) || u.email?.toLowerCase().includes(query);
-        const matchesStatus = filter === "all" || (filter === "active" && !u.disabled) || (filter === "disabled" && u.disabled);
-        return matchesQuery && matchesStatus;
-      });
-      renderTable(filtered);
-    };
-
-    window.addManualUser = async () => {
+    document.getElementById("addUserBtn").addEventListener("click", async () => {
       const username = document.getElementById("manualUsername").value;
       const email = document.getElementById("manualEmail").value;
       const password = document.getElementById("manualPassword").value;
-
-      if (!username || !email || !password) {
-        alert("Isi semua kolom!");
-        return;
-      }
-
+      if (!username || !email || !password) return alert("Semua field harus diisi.");
       try {
-        const newUser = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", newUser.user.uid), {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", userCredential.user.uid), {
           username,
           email,
           disabled: false
         });
         alert("User berhasil ditambahkan.");
-        await loadUsers();
-      } catch (e) {
-        alert("Gagal menambah user: " + e.message);
+        loadUsers();
+      } catch (error) {
+        alert("Gagal menambah user: " + error.message);
       }
-    };
+    });
+
+    document.getElementById("deleteChatBtn").addEventListener("click", async () => {
+      if (!confirm("Yakin ingin menghapus semua chat?")) return;
+      const chatRef = collection(db, "messages");
+      const chats = await getDocs(chatRef);
+      const deletes = chats.docs.map(msg => deleteDoc(doc(db, "messages", msg.id)));
+      await Promise.all(deletes);
+      alert("Semua chat telah dihapus.");
+    });
   </script>
 </body>
 </html>
