@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register - Zarr</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #00bfff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      animation: fadeIn 1s ease-in;
+    }
+
+    .container {
+      background: #111;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #00bfff88, 0 0 40px #00557755;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #00bfff, 0 0 20px #00bfff;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: #00bfff;
+      font-size: 16px;
+      box-shadow: 0 0 10px #003355 inset;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 10px #00bfff, 0 0 20px #00bfff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #00bfff;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 0 15px #00bfff, 0 0 30px #00bfff88;
+    }
+
+    button:hover {
+      background: #00a0e6;
+      box-shadow: 0 0 20px #00e6ff, 0 0 30px #00e6ff;
+    }
+
+    .alert {
+      background: #111;
+      border: 1px solid #00bfff88;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 8px;
+      color: #00e6ff;
+      box-shadow: 0 0 10px #00bfff44;
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Daftar Akun</h2>
+    <form id="registerForm">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Daftar</button>
+      <div class="alert" id="alertBox"></div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBS8zFam4zEzbArxbLru-n7LkxGVqCYJ1g",
+      authDomain: "zarr-official-website.firebaseapp.com",
+      projectId: "zarr-official-website",
+      storageBucket: "zarr-official-website.firebasestorage.app",
+      messagingSenderId: "140664672363",
+      appId: "1:140664672363:web:140cd6a7f005e53b88612e",
+      measurementId: "G-ETFQ9RLF17"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("registerForm");
+    const alertBox = document.getElementById("alertBox");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      const username = form.username.value.trim();
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          email,
+          username,
+          disabled: false
+        });
+
+        alertBox.textContent = "Registrasi berhasil! Silakan login.";
+        alertBox.style.display = "block";
+        alertBox.style.borderColor = "#00ffcc";
+        setTimeout(() => window.location.href = "login.html", 2000);
+      } catch (error) {
+        alertBox.textContent = error.message;
+        alertBox.style.display = "block";
+        alertBox.style.borderColor = "#ff0055";
+      }
+    });
+  </script>
+</body>
+</html>

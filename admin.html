@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d0d0d;
+      color: #00ffff;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #00ffff;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    input, select {
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      background-color: #111;
+      color: #00ffff;
+      box-shadow: 0 0 5px #00ffff44;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #111;
+      box-shadow: 0 0 10px #00ffff44;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #222;
+    }
+    th {
+      background-color: #0d0d0d;
+      color: #00ffff;
+    }
+    tr:hover {
+      background-color: #222;
+    }
+    button {
+      padding: 6px 12px;
+      background-color: #00ffff;
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 4px;
+    }
+    button:hover {
+      background-color: #00cccc;
+    }
+    .status.active { color: lime; font-weight: bold; }
+    .status.disabled { color: red; font-weight: bold; }
+    .add-user-form {
+      background: #111;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #00ffff22;
+      margin-top: 20px;
+    }
+    .add-user-form input {
+      margin: 5px 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Cari username/email..." oninput="filterUsers()" />
+    <select id="statusFilter" onchange="filterUsers()">
+      <option value="all">Semua</option>
+      <option value="active">Aktif</option>
+      <option value="disabled">Nonaktif</option>
+    </select>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>UID</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+
+  <div class="add-user-form">
+    <h3>Tambah User Manual</h3>
+    <input type="text" id="manualUsername" placeholder="Username" />
+    <input type="email" id="manualEmail" placeholder="Email" />
+    <input type="password" id="manualPassword" placeholder="Password" />
+    <button onclick="addManualUser()">Tambah User</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBS8zFam4zEzbArxbLru-n7LkxGVqCYJ1g",
+      authDomain: "zarr-official-website.firebaseapp.com",
+      projectId: "zarr-official-website",
+      storageBucket: "zarr-official-website.firebasestorage.app",
+      messagingSenderId: "140664672363",
+      appId: "1:140664672363:web:140cd6a7f005e53b88612e",
+      measurementId: "G-ETFQ9RLF17"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_UID = "C4aQ04jGiKMEKGgx7LFeBCEqMKe2";
+    let allUsers = [];
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || user.uid !== ADMIN_UID) {
+        alert("Akses ditolak. Anda bukan admin.");
+        window.location.href = "login.html";
+        return;
+      }
+      await loadUsers();
+    });
+
+    async function loadUsers() {
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      allUsers = [];
+      usersSnapshot.forEach(docSnap => {
+        allUsers.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderTable(allUsers);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("userTable");
+      tbody.innerHTML = "";
+      data.forEach(user => {
+        const status = user.disabled ? "Nonaktif" : "Aktif";
+        const statusClass = user.disabled ? "disabled" : "active";
+        const toggleText = user.disabled ? "Aktifkan" : "Nonaktifkan";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${user.username || "-"}</td>
+          <td>${user.email || "-"}</td>
+          <td>${user.id}</td>
+          <td class="status ${statusClass}">${status}</td>
+          <td>
+            <button onclick="toggleStatus('${user.id}', ${user.disabled})">${toggleText}</button>
+            <button onclick="deleteUser('${user.id}')">Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.toggleStatus = async (uid, isDisabled) => {
+      const userRef = doc(db, "users", uid);
+      await updateDoc(userRef, { disabled: !isDisabled });
+      await loadUsers();
+    };
+
+    window.deleteUser = async (uid) => {
+      if (confirm("Yakin ingin menghapus user ini?")) {
+        await deleteDoc(doc(db, "users", uid));
+        await loadUsers();
+      }
+    };
+
+    window.filterUsers = () => {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filter = document.getElementById("statusFilter").value;
+      const filtered = allUsers.filter(u => {
+        const matchesQuery = u.username?.toLowerCase().includes(query) || u.email?.toLowerCase().includes(query);
+        const matchesStatus = filter === "all" || (filter === "active" && !u.disabled) || (filter === "disabled" && u.disabled);
+        return matchesQuery && matchesStatus;
+      });
+      renderTable(filtered);
+    };
+
+    window.addManualUser = async () => {
+      const username = document.getElementById("manualUsername").value;
+      const email = document.getElementById("manualEmail").value;
+      const password = document.getElementById("manualPassword").value;
+
+      if (!username || !email || !password) {
+        alert("Isi semua kolom!");
+        return;
+      }
+
+      try {
+        const newUser = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", newUser.user.uid), {
+          username,
+          email,
+          disabled: false
+        });
+        alert("User berhasil ditambahkan.");
+        await loadUsers();
+      } catch (e) {
+        alert("Gagal menambah user: " + e.message);
+      }
+    };
+  </script>
+</body>
+</html>
