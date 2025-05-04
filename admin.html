@@ -106,17 +106,16 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const adminUID = "C4aQ04jGiKMEKGgx7LFeBCEqMKe2";
-       
+    const adminUIDs = ["C4aQ04jGiKMEKGgx7LFeBCEqMKe2", "iVE8LW71clOfPFo5Hf8k1dNpFlu2"]; // contoh dua admin
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user || user.uid !== adminUID) {
-        alert("Akses hanya untuk admin.");
-        window.location.href = "login.html";
-        return;
-      }
-      loadUsers();
-    });
+onAuthStateChanged(auth, async (user) => {
+  if (!user || !adminUIDs.includes(user.uid)) {
+    alert("Akses hanya untuk admin.");
+    window.location.href = "login.html";
+    return;
+  }
+  loadUsers();
+});
 
     async function loadUsers() {
       const snapshot = await getDocs(collection(db, "users"));
