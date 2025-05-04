@@ -1,4 +1,4 @@
-          <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -76,22 +76,23 @@
     </table>
   </div>
 
-  <div class="neon-box mt-10">
-    <h2 class="text-xl font-bold mb-4">Tambah User Manual</h2>
-    <input id="manualUsername" type="text" placeholder="Username" class="block w-full mb-2 px-4 py-2 rounded">
-    <input id="manualEmail" type="email" placeholder="Email" class="block w-full mb-2 px-4 py-2 rounded">
-    <input id="manualPassword" type="password" placeholder="Password" class="block w-full mb-4 px-4 py-2 rounded">
-    <button id="addUserBtn" class="glow-btn px-4 py-2 rounded">Tambah User</button>
-  </div>
-
   <div class="text-center mt-8">
     <button id="deleteChatBtn" class="glow-btn px-6 py-2 rounded">Hapus Semua Chat</button>
   </div>
 
+  <div class="neon-box mt-10">
+    <h2 class="text-xl font-bold mb-4">Manajemen Tag</h2>
+    <div class="flex mb-4">
+      <input id="newTagInput" type="text" placeholder="Nama tag baru" class="px-4 py-2 rounded w-full mr-2">
+      <button id="addTagBtn" class="glow-btn px-4 py-2 rounded">Tambah</button>
+    </div>
+    <ul id="tagList" class="list-disc list-inside"></ul>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, setDoc, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBS8zFam4zEzbArxbLru-n7LkxGVqCYJ1g",
@@ -106,18 +107,22 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const adminUIDs = ["C4aQ04jGiKMEKGgx7LFeBCEqMKe2", 
-                       "iVE8LW71clOfPFo5Hf8k1dNpFlu2",
-                       "hNaZ99mK7IS6bTLktiMSu2vWZA32"]; 
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user || !adminUIDs.includes(user.uid)) {
-    alert("Akses hanya untuk admin.");
-    window.location.href = "login.html";
-    return;
-  }
-  loadUsers();
-});
+    const adminUIDs = [
+      "C4aQ04jGiKMEKGgx7LFeBCEqMKe2",
+      "iVE8LW71clOfPFo5Hf8k1dNpFlu2",
+      "hNaZ99mK7IS6bTLktiMSu2vWZA32"
+    ];
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || !adminUIDs.includes(user.uid)) {
+        alert("Akses hanya untuk admin.");
+        window.location.href = "login.html";
+        return;
+      }
+      loadUsers();
+      loadTags();
+    });
 
     async function loadUsers() {
       const snapshot = await getDocs(collection(db, "users"));
@@ -170,25 +175,6 @@ onAuthStateChanged(auth, async (user) => {
       }
     };
 
-    document.getElementById("addUserBtn").addEventListener("click", async () => {
-      const username = document.getElementById("manualUsername").value;
-      const email = document.getElementById("manualEmail").value;
-      const password = document.getElementById("manualPassword").value;
-      if (!username || !email || !password) return alert("Semua field harus diisi.");
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          username,
-          email,
-          disabled: false
-        });
-        alert("User berhasil ditambahkan.");
-        loadUsers();
-      } catch (error) {
-        alert("Gagal menambah user: " + error.message);
-      }
-    });
-
     document.getElementById("deleteChatBtn").addEventListener("click", async () => {
       if (!confirm("Yakin ingin menghapus semua chat?")) return;
       const chatRef = collection(db, "messages");
@@ -197,6 +183,38 @@ onAuthStateChanged(auth, async (user) => {
       await Promise.all(deletes);
       alert("Semua chat telah dihapus.");
     });
+
+    // Manajemen Tag
+    const tagList = document.getElementById("tagList");
+    document.getElementById("addTagBtn").addEventListener("click", async () => {
+      const input = document.getElementById("newTagInput");
+      const tagName = input.value.trim();
+      if (!tagName) return;
+      await addDoc(collection(db, "tags"), { name: tagName });
+      input.value = "";
+    });
+
+    function loadTags() {
+      const q = collection(db, "tags");
+      onSnapshot(q, (snapshot) => {
+        tagList.innerHTML = "";
+        snapshot.forEach(docSnap => {
+          const li = document.createElement("li");
+          li.className = "mb-2";
+          li.innerHTML = `
+            <span>${docSnap.data().name}</span>
+            <button class="bg-red-600 text-white px-2 py-1 ml-2 rounded" onclick="deleteTag('${docSnap.id}')">Hapus</button>
+          `;
+          tagList.appendChild(li);
+        });
+      });
+    }
+
+    window.deleteTag = async (id) => {
+      if (confirm("Yakin ingin menghapus tag ini?")) {
+        await deleteDoc(doc(db, "tags", id));
+      }
+    };
   </script>
 </body>
 </html>
