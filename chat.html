@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+        <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
@@ -77,6 +77,18 @@
       cursor: pointer;
       color: #000;
     }
+    .popup {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #00f2ff;
+      color: #000;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 12px #00f2ff88;
+      animation: fadeIn 0.5s ease;
+      z-index: 999;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -94,16 +106,15 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBS8zFam4zEzbArxbLru-n7LkxGVqCYJ1g",
       authDomain: "zarr-official-website.firebaseapp.com",
       projectId: "zarr-official-website",
-      storageBucket: "zarr-official-website.firebasestorage.app",
+      storageBucket: "zarr-official-website.appspot.com",
       messagingSenderId: "140664672363",
-      appId: "1:140664672363:web:140cd6a7f005e53b88612e",
-      measurementId: "G-ETFQ9RLF17"
+      appId: "1:140664672363:web:140cd6a7f005e53b88612e"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -117,6 +128,28 @@
     let currentUser = null;
     let currentUsername = null;
 
+    function showPopup(message) {
+      const popup = document.createElement("div");
+      popup.className = "popup";
+      popup.textContent = message;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 4000);
+    }
+
+    async function sendNotification(targetUsername, fromUsername, messageText) {
+      const userQuery = query(collection(db, "users"));
+      const snapshot = await getDocs(userQuery);
+      snapshot.forEach(async userDoc => {
+        const user = userDoc.data();
+        if (user.username === targetUsername && user.uid !== currentUser.uid) {
+          await setDoc(doc(db, "notifications", user.uid), {
+            message: `Kamu ditandai oleh ${fromUsername}: "${messageText}"`,
+            timestamp: Date.now()
+          });
+        }
+      });
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if (!user) return location.href = "login.html";
 
@@ -127,7 +160,8 @@
         return location.href = "login.html";
       }
       currentUsername = userDoc.data().username || "Anonim";
-      loadChat();
+      listenToChat();
+      listenToNotifications();
     });
 
     chatForm.addEventListener("submit", async (e) => {
@@ -142,10 +176,19 @@
         createdAt: Date.now()
       });
 
+      // Cek apakah ada @username
+      const tags = text.match(/@(\w+)/g);
+      if (tags) {
+        for (let tag of tags) {
+          const taggedUser = tag.slice(1);
+          await sendNotification(taggedUser, currentUsername, text);
+        }
+      }
+
       messageInput.value = "";
     });
 
-    function loadChat() {
+    function listenToChat() {
       const q = query(collection(db, "messages"), orderBy("createdAt"));
       onSnapshot(q, (snapshot) => {
         chatBox.innerHTML = "";
@@ -160,6 +203,15 @@
           chatBox.appendChild(div);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+
+    function listenToNotifications() {
+      onSnapshot(doc(db, "notifications", auth.currentUser.uid), (docSnap) => {
+        if (docSnap.exists()) {
+          const notif = docSnap.data();
+          showPopup(notif.message);
+        }
       });
     }
   </script>
